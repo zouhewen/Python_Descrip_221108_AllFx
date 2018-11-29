@@ -25,6 +25,9 @@ from dateutil.parser import parse
 import array as arr
 
 
+from fpdf import FPDF
+import matplotlib.backends.backend_pdf
+
 # Calculates portfolio mean return
 def port_mean(W, R):
     return sum(R * W)
@@ -204,6 +207,14 @@ rf = .015  # Risk-free rate
 display(pd.DataFrame({'Return': R, 'Weight (based on market cap)': W}, index=names).T)
 display(pd.DataFrame(C, columns=names, index=names))
 
+# Creating a pdf file to save the graphs
+pdf = FPDF()
+pdf.add_page()
+pdf.set_font("Arial", size=12)
+pdf.cell(200, 10, txt="Black Litterman model", ln=1, align="C")
+pdf.output("simple_demo.pdf")
+
+
 #Mean-Variance Optimization (based on historical returns)
 res1 = optimize_frontier(R, C, rf)
 
@@ -212,6 +223,8 @@ display_frontier(res1, color='blue')
 plt.xlabel('variance $\sigma$'), plt.ylabel('mean $\mu$'),plt.savefig("MVO based on historical returns.png"), plt.show()
 
 display(pd.DataFrame({'Weight': res1.W}, index=names).T)
+print(res1.W)
+
 plt.close
 #plt.savefig("MVO based on historical returns.jpeg")
 
@@ -270,12 +283,15 @@ sub_c = np.dot(np.linalg.inv(np.dot(tau, C)), Pi)
 sub_d = np.dot(np.dot(np.transpose(P), np.linalg.inv(omega)), Q)
 Pi_adj = np.dot(np.linalg.inv(sub_a + sub_b), (sub_c + sub_d))
 
-res3 = optimize_frontier(Pi + rf, C, rf)
+res3 = optimize_frontier(Pi_adj + rf, C, rf)
 
 display_assets(names, Pi+rf, C, color='green')
 display_frontier(res2, label='Implied returns', color='green')
 display_assets(names, Pi_adj+rf, C, color='blue')
 display_frontier(res3, label='Implied returns (adjusted views)', color='blue')
 plt.xlabel('variance $\sigma$'), plt.ylabel('mean $\mu$'), plt.legend(), plt.savefig("MVO based on equilibrium excess returns with views.png"), plt.show()
-display(pd.DataFrame({'Weight': res2.W}, index=names).T)
+display(pd.DataFrame({'Weight': res3.W}, index=names).T)
 plt.close
+
+
+
